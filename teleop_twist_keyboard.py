@@ -5,7 +5,7 @@ from __future__ import print_function
 import roslib; roslib.load_manifest('teleop_twist_keyboard')
 import rospy
 
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Twist,TwistStamped
 
 import sys, select, termios, tty
 
@@ -79,7 +79,7 @@ def vels(speed,turn):
 if __name__=="__main__":
     settings = termios.tcgetattr(sys.stdin)
 
-    pub = rospy.Publisher('cmd_vel', Twist, queue_size = 1)
+    pub = rospy.Publisher('cmd_vel', TwistStamped, queue_size = 1)
     rospy.init_node('teleop_twist_keyboard')
 
     speed = rospy.get_param("~speed", 0.5)
@@ -115,19 +115,26 @@ if __name__=="__main__":
                 th = 0
                 if (key == '\x03'):
                     break
+                continue
 
             twist = Twist()
+            twist_st = TwistStamped()
             twist.linear.x = x*speed; twist.linear.y = y*speed; twist.linear.z = z*speed;
             twist.angular.x = 0; twist.angular.y = 0; twist.angular.z = th*turn
-            pub.publish(twist)
+            twist_st.header.stamp = rospy.Time.now()
+            twist_st.twist =twist
+            pub.publish(twist_st)
 
     except Exception as e:
         print(e)
 
     finally:
         twist = Twist()
+        twist_st = TwistStamped()
         twist.linear.x = 0; twist.linear.y = 0; twist.linear.z = 0
         twist.angular.x = 0; twist.angular.y = 0; twist.angular.z = 0
-        pub.publish(twist)
-
+        twist_st.header.stamp = rospy.Time.now()
+        twist_st.twist =twist
+        pub.publish(twist_st)
         termios.tcsetattr(sys.stdin, termios.TCSADRAIN, settings)
+
